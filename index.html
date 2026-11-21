@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Fish to Go</title>
+<meta name="theme-color" content="#f7f0dc">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fish to Go">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--ink:#4b3a2a;--muted:#9a8770;--bg:#f7f0dc;--card:#fffcf2;--line:#ecdfbf;--orange:#ef7f45;--teal:#5fa8a8;--green:#8db255}
+body{font-family:'Fredoka',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;user-select:none;-webkit-user-select:none;
+  background-image:radial-gradient(circle at 15% 10%,rgba(246,211,196,.45) 0 60px,transparent 61px),radial-gradient(circle at 90% 40%,rgba(191,224,220,.4) 0 80px,transparent 81px),radial-gradient(circle at 20% 85%,rgba(220,232,170,.4) 0 70px,transparent 71px);background-attachment:fixed}
+#app{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:92px}
+header{position:sticky;top:0;z-index:10;background:rgba(255,252,242,.96);backdrop-filter:blur(6px);border-bottom:1.5px solid var(--line);padding:10px 14px;display:flex;align-items:center;gap:12px}
+.lvl{width:50px;height:50px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f9b27a,#ef7f45);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:19px;box-shadow:0 3px 0 #c9622e,inset 0 2px 0 rgba(255,255,255,.35);flex:none;line-height:1}
+.lvl small{font-size:9px;font-weight:600;margin-bottom:1px;opacity:.9}
+.lvl.bump{animation:bump .6s}
+@keyframes bump{50%{transform:scale(1.3) rotate(-6deg)}}
+.xpwrap{flex:1;min-width:0}
+.xptext{font-size:12px;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between;gap:6px}
+.xptext span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xpbar{height:11px;background:#efe4c8;border-radius:8px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(120,90,40,.15)}
+.xpfill{height:100%;width:0;background:linear-gradient(90deg,#f6c06b,#ef7f45);border-radius:8px;transition:width .4s}
+.coins{background:#fff1d0;border:1.5px solid #f1dca5;padding:6px 11px;border-radius:20px;font-weight:600;white-space:nowrap;color:#8a5a1c}
+main{padding:14px}
+.view{display:none}.view.active{display:block}
+h2{font-size:17px;margin:6px 2px 10px;font-weight:600}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:12px;margin-bottom:12px;box-shadow:0 3px 0 rgba(200,175,120,.18)}
+
+/* art */
+.art{display:block;width:100%;height:100%;overflow:visible}
+.sil .art{filter:brightness(0);opacity:.16}
+
+/* scene */
+.scene{position:relative;aspect-ratio:400/230;border-radius:24px;overflow:hidden;border:1.5px solid var(--line);box-shadow:0 4px 0 rgba(200,175,120,.2)}
+.scenesvg{position:absolute;inset:0;width:100%;height:100%}
+.locname{position:absolute;top:10px;left:10px;background:rgba(255,252,242,.88);padding:4px 11px;border-radius:12px;font-weight:600;font-size:14px;z-index:3;border:1.5px solid var(--line)}
+.scenesvg .bob{animation:bob 2.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes bob{50%{transform:translateY(2px) rotate(4deg)}}
+.scene.bite .bob{animation:dip .65s ease-in}
+@keyframes dip{0%{transform:translateY(0)}25%{transform:translateY(7px)}50%{transform:translateY(2px)}100%{transform:translateY(12px)}}
+.scenesvg .rip{transform-box:fill-box;transform-origin:center;animation:rip 2.6s ease-out infinite;opacity:0}
+.scenesvg .rip2{animation-delay:1.3s}
+@keyframes rip{0%{transform:scale(.4);opacity:.7}100%{transform:scale(2.6);opacity:0}}
+.scenesvg .sway{transform-box:fill-box;transform-origin:bottom center;animation:sway 5s ease-in-out infinite}
+.scenesvg .sway2{animation-duration:6.5s;animation-direction:reverse}
+@keyframes sway{50%{transform:rotate(2.5deg)}}
+.popfish{position:absolute;left:50%;top:40%;width:84px;height:66px;opacity:0;z-index:4;transform:translate(-50%,0);pointer-events:none}
+.popfish.jump{animation:jump 1.2s ease-out}
+@keyframes jump{0%{opacity:0;transform:translate(-50%,30px) scale(.4)}35%{opacity:1;transform:translate(-50%,-58px) rotate(-14deg) scale(1.15)}75%{opacity:1;transform:translate(-50%,-52px) rotate(8deg) scale(1.05)}100%{opacity:0;transform:translate(-50%,-66px) scale(.9)}}
+.shake{animation:shake .5s}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+
+.cast{position:relative;overflow:hidden;width:100%;margin:14px 0 12px;padding:17px;font:inherit;font-size:23px;font-weight:700;color:#fff;background:linear-gradient(#f6a36a,#ef7f45);border:none;border-radius:22px;box-shadow:0 5px 0 #c9622e,inset 0 2px 0 rgba(255,255,255,.3);touch-action:manipulation;cursor:pointer;letter-spacing:.3px}
+.cast:active{transform:translateY(3px);box-shadow:0 2px 0 #c9622e}
+.cast.cooling{filter:saturate(.35) brightness(.97)}
+.castfill{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.3)}
+.cast span{position:relative}
+
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chip{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:6px 11px;font-size:13px;font-family:inherit;color:var(--ink);cursor:pointer}
+
+.ci{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:16px;border:2px solid var(--rc);background:#fff;background:color-mix(in srgb,var(--rc) 13%,#fffcf2);margin-bottom:6px}
+.ci:last-child{margin-bottom:0}
+.ci.r-l{box-shadow:0 0 16px rgba(242,185,75,.6)}
+.ci .pic{width:58px;height:46px;flex:none}
+.ct{flex:1;display:flex;flex-direction:column;min-width:0}
+.ct small{color:var(--muted);font-size:12px}
+.new{display:inline-block;margin-left:6px;background:#ef7f9a;color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;vertical-align:middle;font-weight:600}
+.xp{font-weight:600;color:#5c8f8f;font-size:13px;white-space:nowrap}
+.pop{animation:pop .35s}
+@keyframes pop{from{transform:scale(.95);opacity:.3}}
+.hint{color:var(--muted);text-align:center;padding:10px 4px;font-size:15px}
+
+.bbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn{font:inherit;font-weight:600;border:none;border-radius:14px;padding:8px 14px;background:var(--teal);color:#fff;touch-action:manipulation;cursor:pointer;white-space:nowrap;box-shadow:0 3px 0 #437e7e}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #437e7e}
+.btn:disabled{background:#dcd2bb;box-shadow:0 3px 0 #c2b69b;cursor:default}
+.btn.gold{background:#f2b04b;box-shadow:0 3px 0 #c98a2a}
+.btn.ghost{background:#f3ead3;color:var(--ink);box-shadow:0 3px 0 #ddd0ae}
+.btn.danger{background:#e07a6e;box-shadow:0 3px 0 #b55a50}
+.row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1.5px dashed var(--line)}
+.row:last-child{border:none}
+.row .em{font-size:30px;width:52px;text-align:center;flex:none}
+.row .pic{width:56px;height:44px;flex:none}
+.row .info{flex:1;min-width:0}
+.row .info small{display:block;color:var(--muted);font-size:12px}
+.row .acts{display:flex;flex-direction:column;gap:7px;align-items:flex-end}
+.tag{font-size:12px;padding:5px 10px;border-radius:10px;background:#f3ead3;color:var(--muted);white-space:nowrap}
+.tag.on{background:#e3efcc;color:#5e8a2e}
+.log{display:flex;flex-wrap:wrap;gap:2px}
+.log .pic{width:40px;height:32px}
+.empty{text-align:center;color:var(--muted);padding:26px 8px}
+.empty .em{font-size:44px;display:block;margin-bottom:6px}
+
+.loc{border-radius:20px;margin-bottom:14px;position:relative;overflow:hidden;border:1.5px solid var(--line);background:var(--card);box-shadow:0 3px 0 rgba(200,175,120,.18)}
+.loc .thumb{position:relative;aspect-ratio:400/150;overflow:hidden}
+.loc .thumb svg{position:absolute;left:0;top:-30%;width:100%;height:auto}
+.loc.locked .thumb{filter:grayscale(.8) brightness(1.05);opacity:.7}
+.loc .body{padding:10px 14px 14px}
+.loc h3{font-size:18px;font-weight:600}
+.loc p{font-size:13px;margin:2px 0 6px;color:var(--muted)}
+.loc .meta{font-size:12px;margin-bottom:10px;color:var(--muted)}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cell{border-radius:16px;padding:6px 4px 8px;text-align:center;background:#fff;border:2px solid var(--rc);background:color-mix(in srgb,var(--rc) 10%,#fffcf2)}
+.cell .pic{width:100%;height:52px}
+.cell b{display:block;font-size:12px;line-height:1.2;margin-top:2px;font-weight:600}
+.cell small{font-size:11px;color:var(--muted)}
+.cell.unk{border-color:var(--line);background:#fbf6e8}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:#f8f1de;border-radius:14px;padding:10px}
+.stat small{color:var(--muted);font-size:12px;display:block}
+.stat b{font-size:16px;font-weight:600}
+
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,252,242,.97);border-top:1.5px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:10}
+nav button{flex:1;border:none;background:none;font:inherit;padding:8px 0 10px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);font-size:11px;position:relative;cursor:pointer}
+nav button .e{font-size:22px;filter:saturate(.7)}
+nav button.active{color:var(--orange);font-weight:600}
+nav button.active .e{filter:none;transform:scale(1.1)}
+.nb{position:absolute;top:3px;left:calc(50% + 6px);background:#ef7f9a;color:#fff;font-size:10px;border-radius:8px;padding:0 5px;min-width:16px;line-height:16px;font-weight:600}
+.nb:empty{display:none}
+
+#toasts{position:fixed;top:82px;left:50%;transform:translateX(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:90%;max-width:420px}
+.toast{background:rgba(75,58,42,.94);color:#fff;padding:10px 14px;border-radius:16px;font-size:14px;animation:tin .3s,tout .4s 2.4s forwards;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.toast.gold{background:linear-gradient(135deg,#f2b04b,#ef7f45);font-weight:600}
+@keyframes tin{from{transform:translateY(-10px);opacity:0}}
+@keyframes tout{to{opacity:0;transform:translateY(-6px)}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="paint" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <linearGradient id="sh" x1="0" y1="0" x2="0" y2="1"><stop offset=".45" stop-color="#3a1f00" stop-opacity="0"/><stop offset="1" stop-color="#3a1f00" stop-opacity=".16"/></linearGradient>
+  </defs>
+</svg>
+
+<div id="app">
+  <header>
+    <div class="lvl" id="lvl"><small>LVL</small><span id="lvlNum">1</span></div>
+    <div class="xpwrap">
+      <div class="xptext"><span id="xpText">0 / 20 xp</span><span id="locShort"></span></div>
+      <div class="xpbar"><div class="xpfill" id="xpFill"></div></div>
+    </div>
+    <div class="coins">💰 <span id="coins">0</span></div>
+  </header>
+
+  <main>
+    <section class="view active" id="v-vis">
+      <div class="scene" id="scene">
+        <div id="sceneArt"></div>
+        <div class="locname" id="locName"></div>
+        <div class="popfish" id="popFish"></div>
+      </div>
+      <button class="cast" id="castBtn"><div class="castfill" id="castFill"></div><span>🎣 Vissen!</span></button>
+      <div class="chips">
+        <button class="chip" onclick="show('winkel')" id="rodChip"></button>
+        <button class="chip" onclick="show('winkel')" id="baitChip"></button>
+      </div>
+      <div class="card" id="catchCard"><div class="hint"><b style="font-size:20px;color:#ef7f45">Welkom bij Fish to Go! 🐟</b><br>Tik op <b>Vissen!</b> om je hengel uit te werpen 🎣</div></div>
+      <div class="card bbar" id="bucketBar"></div>
+      <div class="card" id="logCard" style="display:none">
+        <h2 style="margin:0 0 6px;font-size:14px;color:var(--muted)">Laatste vangsten</h2>
+        <div class="log" id="log"></div>
+      </div>
+    </section>
+    <section class="view" id="v-emmer"></section>
+    <section class="view" id="v-winkel"></section>
+    <section class="view" id="v-plekken"></section>
+    <section class="view" id="v-visboek"></section>
+  </main>
+
+  <nav>
+    <button data-v="vis" class="active"><span class="e">🎣</span>Vissen</button>
+    <button data-v="emmer"><span class="e">🪣</span>Emmer<span class="nb" id="nbEmmer"></span></button>
+    <button data-v="winkel"><span class="e">🛒</span>Winkel</button>
+    <button data-v="plekken"><span class="e">🗺️</span>Plekken</button>
+    <button data-v="visboek"><span class="e">📖</span>Visboek</button>
+  </nav>
+</div>
+<div id="toasts"></div>
+
+<script>
+/* =========================================================
+   KLEUR-HULP
+   ========================================================= */
+function shade(hex,amt){
+  const c=hex.replace('#','');let r=parseInt(c.substr(0,2),16),g=parseInt(c.substr(2,2),16),b=parseInt(c.substr(4,2),16);
+  const t=amt<0?0:255,p=Math.abs(amt);
+  r=Math.round(r+(t-r)*p);g=Math.round(g+(t-g)*p);b=Math.round(b+(t-b)*p);
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function rng(seed){let h=7;for(const ch of seed)h=(h*31+ch.charCodeAt(0))|0;h=Math.abs(h)||1;return()=>{h=(h*16807)%2147483647;return h/2147483647;};}
+
+/* =========================================================
+   TEKENINGEN (SVG, geschilderde stijl)
+   ========================================================= */
+const F=n=>Math.round(n*10)/10;
+function eye(x,y,r,glow){
+  if(glow)return `<circle cx="${F(x)}" cy="${F(y)}" r="${r+3.5}" fill="#ffe46b" opacity=".3"/><circle cx="${F(x)}" cy="${F(y)}" r="${r}" fill="#ffe46b" stroke="#c9952a" stroke-width="1"/><circle cx="${F(x)}" cy="${F(y)}" r="${r*.4}" fill="#3a2a1e"/>`;
+  return `<circle cx="${F(x)}" cy="${F(y)}" r="${r}" fill="#2e2018"/><circle cx="${F(x-r*.3)}" cy="${F(y-r*.35)}" r="${F(r*.36)}" fill="#fff"/>`;
+}
+const blush=(x,y)=>`<ellipse cx="${F(x)}" cy="${F(y)}" rx="3.8" ry="2.1" fill="#ff8a8a" opacity=".38"/>`;
+function sparkles(){return [[0,8,4.5],[96,4,3.6],[100,72,3.2]].map(([x,y,r])=>`<path d="M${x} ${y-r*2}Q${x} ${y} ${x+r*2} ${y}Q${x} ${y} ${x} ${y+r*2}Q${x} ${y} ${x-r*2} ${y}Q${x} ${y} ${x} ${y-r*2}Z" fill="#fff6b0" stroke="#e8be45" stroke-width=".9"/>`).join('');}
+function starShape(x,y,r,fill){return `<path d="M${x} ${y-r}Q${x} ${y} ${x+r} ${y}Q${x} ${y} ${x} ${y+r}Q${x} ${y} ${x-r} ${y}Q${x} ${y} ${x} ${y-r}Z" fill="${fill}"/>`;}
+
+function artFish(p){
+  const SH={round:[42,40,24,20],tall:[42,40,23,24],long:[38,40,30,14],slim:[40,40,28,12]};
+  const shape=p.shape||'round';const [cx,cy,rx,ry]=SH[shape];
+  const c1=p.c1,c2=p.c2||shade(c1,.65),fin=p.fin||shade(c1,.3),ol=shade(c1,-.42),fo=shade(fin,-.35),tc=p.tailc||fin,tco=shade(tc,-.35);
+  const tx=cx+rx-5;let s='';
+  // staart
+  const T=p.tail||'fork';
+  if(T==='fan'){
+    s+=`<path d="M${tx} ${cy}C${tx+12} ${cy-32} ${tx+36} ${cy-30} ${tx+32} ${cy-8}C${tx+29} ${cy} ${tx+36} ${cy+6} ${tx+31} ${cy+18}C${tx+26} ${cy+32} ${tx+8} ${cy+28} ${tx} ${cy}Z" fill="${tc}" stroke="${tco}" stroke-width="1.6" stroke-linejoin="round"/>`;
+    s+=[[26,-22],[31,-10],[31,6],[25,20],[18,-14],[18,14]].map(([dx,dy])=>`<path d="M${tx+3} ${cy}L${tx+dx} ${cy+dy}" stroke="${tco}" stroke-width="1" opacity=".45"/>`).join('');
+  }else if(T==='round'){
+    s+=`<path d="M${tx} ${cy}C${tx+8} ${cy-20} ${tx+26} ${cy-18} ${tx+25} ${cy}C${tx+26} ${cy+18} ${tx+8} ${cy+20} ${tx} ${cy}Z" fill="${tc}" stroke="${tco}" stroke-width="1.6"/>`;
+    s+=[[20,-10],[23,0],[20,10]].map(([dx,dy])=>`<path d="M${tx+3} ${cy}L${tx+dx} ${cy+dy}" stroke="${tco}" stroke-width="1" opacity=".45"/>`).join('');
+  }else{
+    s+=`<path d="M${tx} ${cy}C${tx+8} ${cy-6} ${tx+18} ${cy-18} ${tx+28} ${cy-21}C${tx+22} ${cy-8} ${tx+22} ${cy+8} ${tx+28} ${cy+21}C${tx+18} ${cy+18} ${tx+8} ${cy+6} ${tx} ${cy}Z" fill="${tc}" stroke="${tco}" stroke-width="1.6" stroke-linejoin="round"/>`;
+    s+=[[20,-12],[20,12]].map(([dx,dy])=>`<path d="M${tx+3} ${cy}L${tx+dx} ${cy+dy}" stroke="${tco}" stroke-width="1" opacity=".45"/>`).join('');
+  }
+  // rugvin
+  const D=p.dorsal||'soft';
+  if(D==='tri')s+=`<path d="M${cx-9} ${cy-ry+3}C${cx-3} ${cy-ry-8} ${cx+1} ${cy-ry-17} ${cx+3} ${cy-ry-20}C${cx+6} ${cy-ry-10} ${cx+10} ${cy-ry-2} ${cx+15} ${cy-ry+3}Z" fill="${shade(c1,-.08)}" stroke="${ol}" stroke-width="1.5" stroke-linejoin="round"/>`;
+  else{const h=D==='big'?19:11;s+=`<path d="M${F(cx-rx*.35)} ${cy-ry+4}C${F(cx-rx*.2)} ${cy-ry-h} ${F(cx+rx*.45)} ${cy-ry-h+2} ${F(cx+rx*.72)} ${F(cy-ry*.55)}Z" fill="${fin}" stroke="${fo}" stroke-width="1.4" stroke-linejoin="round"/>`;
+    s+=`<path d="M${F(cx)} ${cy-ry+2}L${F(cx+rx*.1)} ${cy-ry-h*.6}M${F(cx+rx*.3)} ${cy-ry+3}L${F(cx+rx*.35)} ${cy-ry-h*.45}" stroke="${fo}" stroke-width="1" opacity=".45"/>`;}
+  // buikvin
+  s+=`<path d="M${F(cx+rx*.35)} ${F(cy+ry*.8)}C${F(cx+rx*.45)} ${cy+ry+8} ${F(cx+rx*.75)} ${cy+ry+6} ${F(cx+rx*.82)} ${F(cy+ry*.45)}Z" fill="${fin}" stroke="${fo}" stroke-width="1.3"/>`;
+  if(p.sword)s+=`<path d="M${cx-rx+5} ${cy-3}L${cx-rx-24} ${cy+.5}L${cx-rx+5} ${cy+3.5}Z" fill="${shade(c1,.3)}" stroke="${ol}" stroke-width="1.3" stroke-linejoin="round"/>`;
+  // lijf
+  s+=`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${c1}" stroke="${ol}" stroke-width="1.8"/>`;
+  s+=`<ellipse cx="${F(cx-rx*.15)}" cy="${F(cy+ry*.42)}" rx="${F(rx*.74)}" ry="${F(ry*.48)}" fill="${c2}" opacity=".9"/>`;
+  if(p.face)s+=`<ellipse cx="${F(cx-rx*.66)}" cy="${cy+1}" rx="${F(rx*.33)}" ry="${F(ry*.7)}" fill="${c2}"/>`;
+  // patroon
+  const R=rng(p.id||'x');
+  if(p.pat==='spots'||p.pat==='glow'){
+    const n=p.n||8;let k=0,tries=0;
+    while(k<n&&tries<200){tries++;const u=R()*2-1,v=R()*2-1;if(u*u+v*v>.6||u<-.42)continue;
+      const x=cx+u*rx,y=cy+v*ry,r=(1.1+R()*1.7)*(p.sr||1);
+      if(p.pat==='glow')s+=`<circle cx="${F(x)}" cy="${F(y)}" r="${F(r+2.5)}" fill="${p.pc}" opacity=".3"/>`;
+      s+=`<circle cx="${F(x)}" cy="${F(y)}" r="${F(r)}" fill="${p.pc||shade(c1,-.25)}" opacity=".85"/>`;k++;}
+  }else if(p.pat==='stripes'){
+    (p.sx||[-.28,.12,.5]).forEach(dx=>{const h=ry*Math.sqrt(1-dx*dx)*.93;s+=`<ellipse cx="${F(cx+dx*rx)}" cy="${cy}" rx="3.4" ry="${F(h)}" fill="${p.pc}" ${p.pco?`stroke="${p.pco}" stroke-width="1.2"`:''} opacity=".92"/>`;});
+  }else if(p.pat==='scales'){
+    for(const u of [-.15,.15,.45])for(const v of [-.45,0,.45]){if(u*u+v*v>.55)continue;const x=cx+u*rx,y=cy+v*ry;s+=`<path d="M${F(x-3.5)} ${F(y)}Q${F(x)} ${F(y+4)} ${F(x+3.5)} ${F(y)}" stroke="${ol}" stroke-width="1" fill="none" opacity=".35"/>`;}
+  }
+  s+=`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="url(#sh)"/>`;
+  s+=`<ellipse cx="${F(cx-rx*.2)}" cy="${F(cy-ry*.52)}" rx="${F(rx*.45)}" ry="${F(ry*.2)}" fill="#fff" opacity=".38"/>`;
+  // borstvin
+  const px=cx-rx*.12,py=cy+ry*.28;
+  s+=`<path d="M${F(px)} ${F(py)}C${F(px+2)} ${F(py+10)} ${F(px+10)} ${F(py+13)} ${F(px+14)} ${F(py+9)}C${F(px+10)} ${F(py+5)} ${F(px+6)} ${F(py+1)} ${F(px)} ${F(py)}Z" fill="${fin}" stroke="${fo}" stroke-width="1.2"/>`;
+  // kop
+  const slim=shape==='long'||shape==='slim';
+  const ex=cx-rx*(slim?.7:.6),ey=cy-ry*(slim?.12:.2),er=slim?3.5:4.4;
+  s+=`<path d="M${F(ex+7)} ${F(ey-5)}Q${F(ex+11)} ${F(ey+3)} ${F(ex+7)} ${F(ey+10)}" stroke="${ol}" stroke-width="1.2" fill="none" opacity=".4"/>`;
+  if(p.gills)s+=[10,13,16].map(d=>`<path d="M${F(ex+d)} ${F(ey-3)}Q${F(ex+d+2)} ${F(ey+3)} ${F(ex+d)} ${F(ey+8)}" stroke="${ol}" stroke-width="1.1" fill="none" opacity=".5"/>`).join('');
+  s+=eye(ex,ey,er,p.glow)+blush(ex+1.5,ey+6.8);
+  const mx=cx-rx+1.6,my=cy+ry*.18;
+  s+=`<circle cx="${F(mx+1)}" cy="${F(my)}" r="1.6" fill="none" stroke="${ol}" stroke-width="1.2"/>`;
+  if(p.teeth)s+=`<path d="M${F(mx+1)} ${F(my+2.5)}l2 2.5l2-2.5l2 2.5l2-2.5" stroke="#fff" stroke-width="1.3" fill="none" stroke-linejoin="round"/>`;
+  if(p.whiskers)s+=`<path d="M${F(mx)} ${F(my+1)}Q${F(mx-6)} ${F(my+5)} ${F(mx-7)} ${F(my+13)}M${F(mx+1)} ${F(my+1.5)}Q${F(mx-2)} ${F(my+8)} ${F(mx+1)} ${F(my+15)}" stroke="${ol}" stroke-width="1.3" fill="none" stroke-linecap="round"/>`;
+  if(p.lure){const lx=cx-rx-6,ly=cy-ry-10;s+=`<path d="M${F(cx-rx*.4)} ${F(cy-ry*.9)}Q${F(cx-rx*.6)} ${cy-ry-22} ${F(lx)} ${ly}" stroke="${ol}" stroke-width="1.5" fill="none"/><circle cx="${F(lx)}" cy="${ly}" r="8" fill="#fff3a0" opacity=".35"/><circle cx="${F(lx)}" cy="${ly}" r="3.8" fill="#fff3a0" stroke="#e8c84a" stroke-width="1"/>`;}
+  if(p.crown){const x=cx-rx*.42,y=cy-ry*.9;s+=`<path d="M${F(x-8)} ${F(y)}L${F(x-10)} ${F(y-10)}L${F(x-4)} ${F(y-5)}L${F(x)} ${F(y-13)}L${F(x+4)} ${F(y-5)}L${F(x+10)} ${F(y-10)}L${F(x+8)} ${F(y)}Z" fill="#f6c945" stroke="#c9952a" stroke-width="1.3" stroke-linejoin="round"/><circle cx="${F(x)}" cy="${F(y-3)}" r="1.8" fill="#ef7f9a"/>`;}
+  if(p.sparkle)s+=sparkles();
+  return s;
+}
+function artEel(p){
+  const c1=p.c1,c2=p.c2||shade(c1,.55),ol=shade(c1,-.42);
+  const d='M12 40C26 22 40 56 58 40S88 26 100 44';
+  return `<path d="${d}" transform="translate(0,-8)" stroke="${shade(c1,.25)}" stroke-width="5" fill="none" stroke-linecap="round" opacity=".85"/>
+  <path d="${d}" stroke="${ol}" stroke-width="17" fill="none" stroke-linecap="round"/>
+  <path d="${d}" stroke="${c1}" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <path d="${d}" transform="translate(0,4)" stroke="${c2}" stroke-width="5" fill="none" stroke-linecap="round" opacity=".85"/>
+  <path d="${d}" transform="translate(0,-3.5)" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".32"/>
+  ${eye(13,37,3.4)}${blush(15,43)}<circle cx="6.5" cy="41" r="1.4" fill="none" stroke="${ol}" stroke-width="1.1"/>`;
+}
+function artCrab(p){
+  const c1=p.c1,ol=shade(c1,-.42),c2=shade(c1,.45);let s='';
+  for(const sd of [-1,1])for(let i=0;i<3;i++){const x=50+sd*(13+i*5),y=54+i*2;s+=`<path d="M${x} ${y}q${sd*8} 4 ${sd*10} 14" stroke="${ol}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;}
+  for(const sd of [-1,1]){const cw=50+sd*36;
+    s+=`<path d="M${50+sd*18} 44Q${50+sd*30} 42 ${cw} 30" stroke="${c1}" stroke-width="5.5" fill="none" stroke-linecap="round"/>`;
+    s+=`<ellipse cx="${cw}" cy="26" rx="10" ry="7.5" fill="${c1}" stroke="${ol}" stroke-width="1.6"/><ellipse cx="${cw+sd*3}" cy="16.5" rx="6.5" ry="3.6" transform="rotate(${sd*-20} ${cw+sd*3} 16.5)" fill="${c1}" stroke="${ol}" stroke-width="1.5"/><ellipse cx="${cw-sd*2}" cy="23" rx="4" ry="2" fill="#fff" opacity=".35"/>`;}
+  s+=`<path d="M44 37L41 26M56 37L59 26" stroke="${ol}" stroke-width="2.5" stroke-linecap="round"/>`;
+  s+=`<ellipse cx="50" cy="48" rx="24" ry="15" fill="${c1}" stroke="${ol}" stroke-width="1.8"/><ellipse cx="50" cy="55" rx="16" ry="6" fill="${c2}" opacity=".6"/><ellipse cx="50" cy="48" rx="24" ry="15" fill="url(#sh)"/><ellipse cx="44" cy="40" rx="10" ry="3.5" fill="#fff" opacity=".35"/>`;
+  s+=eye(41,25,4)+eye(59,25,4)+blush(38,51)+blush(62,51)+`<path d="M45 50Q50 54 55 50" stroke="${ol}" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+  return s;
+}
+function artLobster(p){
+  const c1=p.c1,ol=shade(c1,-.42),c2=shade(c1,.4);let s='';
+  s+=`<path d="M28 40Q10 20 2 6M30 39Q20 14 16 0" stroke="${ol}" stroke-width="1.3" fill="none"/>`;
+  for(const x of [38,44,50,56])s+=`<path d="M${x} 54l-2 9" stroke="${ol}" stroke-width="2.2" stroke-linecap="round"/>`;
+  s+=`<path d="M86 50C92 42 98 40 100 42C101 50 101 52 100 58C98 60 92 58 86 50Z" fill="${c1}" stroke="${ol}" stroke-width="1.5"/>`;
+  [[84,50,5,6.5],[76,49,6,7.5],[67,48,7,8.5],[57,47,8,9.5]].forEach(([x,y,a,b])=>s+=`<ellipse cx="${x}" cy="${y}" rx="${a}" ry="${b}" fill="${c1}" stroke="${ol}" stroke-width="1.5"/><path d="M${x-a+2} ${y+b-3}Q${x} ${y+b-1} ${x+a-2} ${y+b-3}" stroke="${c2}" stroke-width="1.5" fill="none"/>`);
+  for(const [ay,cy2] of [[42,28],[52,64]]){s+=`<path d="M32 ${ay}Q22 ${(ay+cy2)/2} 16 ${cy2}" stroke="${c1}" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="10" cy="${cy2}" rx="10" ry="6.5" fill="${c1}" stroke="${ol}" stroke-width="1.5"/><ellipse cx="4" cy="${cy2-6}" rx="6" ry="3" fill="${c1}" stroke="${ol}" stroke-width="1.4"/><ellipse cx="8" cy="${cy2-2}" rx="4" ry="1.8" fill="#fff" opacity=".35"/>`;}
+  s+=`<ellipse cx="40" cy="46" rx="15" ry="11" fill="${c1}" stroke="${ol}" stroke-width="1.8"/><ellipse cx="40" cy="46" rx="15" ry="11" fill="url(#sh)"/><ellipse cx="38" cy="40" rx="8" ry="3" fill="#fff" opacity=".35"/>`;
+  s+=eye(31,42,3.4)+blush(33,48);
+  return s;
+}
+function artShrimp(p){
+  const c1=p.c1,ol=shade(c1,-.35),c2=shade(c1,.55);let s='';
+  s+=`<path d="M18 34Q0 20 -4 4M20 33Q10 10 18 -2" stroke="${ol}" stroke-width="1.2" fill="none"/>`;
+  for(const x of [36,44,52,60])s+=`<path d="M${x} 46l-3 9" stroke="${ol}" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>`;
+  s+=`<path d="M76 58C84 58 96 62 94 72C88 74 80 70 76 62Z" fill="${c2}" stroke="${ol}" stroke-width="1.3" opacity=".9"/>`;
+  [[78,56,6],[72,47,7],[64,40,8],[54,36,9],[42,36,10],[30,39,11]].forEach(([x,y,r])=>s+=`<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r*.85}" fill="${c1}" stroke="${ol}" stroke-width="1.3" opacity=".88"/>`);
+  s+=`<path d="M16 34L2 30L16 38Z" fill="${c1}" stroke="${ol}" stroke-width="1.2"/><ellipse cx="24" cy="38" rx="10" ry="8" fill="${c1}" stroke="${ol}" stroke-width="1.4"/>`;
+  s+=`<path d="M28 32Q46 26 66 34" stroke="#fff" stroke-width="2.5" fill="none" opacity=".45" stroke-linecap="round"/>`;
+  s+=eye(21,36,3.6)+blush(24,43);
+  return s;
+}
+function artOcto(p){
+  const c1=p.c1,ol=shade(c1,-.42),c2=p.c2||shade(c1,.45);let s='';
+  const n=p.big?8:6;
+  for(let i=0;i<n;i++){const bx=28+i*(44/(n-1)),o=i<n/2?-1:1,k=1+(i%2)*.4;
+    const d=`M${F(bx)} 48C${F(bx+o*2)} 62 ${F(bx+o*9*k)} 68 ${F(bx+o*8*k)} 78C${F(bx+o*6*k)} 85 ${F(bx+o*1)} 84 ${F(bx+o*3)} 79`;
+    s+=`<path d="${d}" stroke="${ol}" stroke-width="${p.big?10:9}" fill="none" stroke-linecap="round"/><path d="${d}" stroke="${c1}" stroke-width="${p.big?7.5:6.5}" fill="none" stroke-linecap="round"/>`;
+    s+=`<circle cx="${F(bx+o*5*k)}" cy="68" r="1.3" fill="${c2}"/><circle cx="${F(bx+o*7.5*k)}" cy="74" r="1.2" fill="${c2}"/>`;}
+  s+=`<path d="M24 50C20 18 40 6 50 6C60 6 80 18 76 50C68 56 32 56 24 50Z" fill="${c1}" stroke="${ol}" stroke-width="1.8"/><path d="M24 50C20 18 40 6 50 6C60 6 80 18 76 50C68 56 32 56 24 50Z" fill="url(#sh)"/>`;
+  const R=rng(p.id);for(let i=0;i<6;i++)s+=`<circle cx="${F(34+R()*32)}" cy="${F(14+R()*18)}" r="${F(1.2+R()*1.8)}" fill="${c2}" opacity=".8"/>`;
+  s+=`<ellipse cx="42" cy="18" rx="11" ry="5" fill="#fff" opacity=".35"/>`;
+  s+=eye(40,37,p.big?5:4.6,p.glow)+eye(60,37,p.big?5:4.6,p.glow)+blush(37,45)+blush(63,45)+`<circle cx="50" cy="46" r="1.8" fill="none" stroke="${ol}" stroke-width="1.3"/>`;
+  return s;
+}
+function artSquid(p){
+  const c1=p.c1,ol=shade(c1,-.42),c2=shade(c1,.45);let s='';
+  for(const y of [34,38,42,46]){const d=`M30 ${y}C20 ${y-6} 14 ${y+6} 4 ${y+(y-40)*.8}`;s+=`<path d="${d}" stroke="${ol}" stroke-width="5" fill="none" stroke-linecap="round"/><path d="${d}" stroke="${c1}" stroke-width="3" fill="none" stroke-linecap="round"/>`;}
+  s+=`<path d="M30 40C18 30 8 18 -4 20M30 41C18 52 8 62 -4 60" stroke="${ol}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  s+=`<path d="M84 34L100 24L95 40ZM84 46L100 56L95 40Z" fill="${shade(c1,.15)}" stroke="${ol}" stroke-width="1.4" stroke-linejoin="round"/>`;
+  s+=`<path d="M38 30C58 24 84 28 98 40C84 52 58 56 38 50Z" fill="${c1}" stroke="${ol}" stroke-width="1.8"/><path d="M38 30C58 24 84 28 98 40C84 52 58 56 38 50Z" fill="url(#sh)"/>`;
+  s+=`<ellipse cx="36" cy="40" rx="10" ry="10" fill="${c1}" stroke="${ol}" stroke-width="1.6"/>`;
+  const R=rng(p.id);for(let i=0;i<6;i++)s+=`<circle cx="${F(50+R()*36)}" cy="${F(34+R()*12)}" r="${F(1+R()*1.6)}" fill="${c2}"/>`;
+  s+=`<path d="M48 31Q66 28 84 34" stroke="#fff" stroke-width="2.5" fill="none" opacity=".4" stroke-linecap="round"/>`;
+  s+=eye(35,38,4.6)+blush(38,46);
+  return s;
+}
+function artJelly(p){
+  const c1=p.c1,ol=shade(c1,-.35),c2=p.c2||shade(c1,.5);let s='';
+  if(p.glow)s+=`<ellipse cx="50" cy="34" rx="40" ry="30" fill="${c1}" opacity=".18"/>`;
+  for(const x of [28,38,48,58,68]){s+=`<path d="M${x} 46C${x-6} 58 ${x+6} 68 ${x-2} 84" stroke="${c1}" stroke-width="2.6" fill="none" opacity=".75" stroke-linecap="round"/>`;}
+  for(const x of [40,56])s+=`<path d="M${x} 46C${x+5} 56 ${x-5} 64 ${x+3} 74" stroke="${c2}" stroke-width="5" fill="none" opacity=".8" stroke-linecap="round"/>`;
+  s+=`<path d="M18 46C18 8 82 8 82 46Q74 52 66 46Q58 52 50 46Q42 52 34 46Q26 52 18 46Z" fill="${c1}" opacity=".9" stroke="${ol}" stroke-width="1.6"/>`;
+  s+=`<ellipse cx="50" cy="30" rx="20" ry="11" fill="${c2}" opacity=".55"/><ellipse cx="40" cy="20" rx="10" ry="4" fill="#fff" opacity=".5"/>`;
+  s+=eye(42,35,3.2)+eye(58,35,3.2)+blush(38,41)+blush(62,41)+`<path d="M47 40Q50 43 53 40" stroke="${ol}" stroke-width="1.3" fill="none" stroke-linecap="round"/>`;
+  return s;
+}
+function artStar(p){
+  const c1=p.c1,ol=shade(c1,-.4),c2=p.c2||shade(c1,.5);let pts=[];
+  for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?15:34;pts.push(F(50+Math.cos(a)*r)+' '+F(44+Math.sin(a)*r));}
+  const d='M'+pts.join('L')+'Z';let s='';
+  s+=`<path d="${d}" fill="${ol}" stroke="${ol}" stroke-width="11" stroke-linejoin="round"/><path d="${d}" fill="${c1}" stroke="${c1}" stroke-width="8" stroke-linejoin="round"/>`;
+  const R=rng(p.id);for(let i=0;i<12;i++){const a=R()*Math.PI*2,r=8+R()*22;s+=`<circle cx="${F(50+Math.cos(a)*r)}" cy="${F(44+Math.sin(a)*r)}" r="${F(1+R())}" fill="${c2}"/>`;}
+  s+=`<ellipse cx="44" cy="30" rx="8" ry="3.5" fill="#fff" opacity=".4"/>`;
+  s+=eye(44,42,3.2)+eye(56,42,3.2)+blush(40,48)+blush(60,48)+`<path d="M46 48Q50 52 54 48" stroke="${ol}" stroke-width="1.4" fill="none" stroke-linecap="round"/>`;
+  if(p.sparkle)s+=sparkles();
+  return s;
+}
+function artWhale(p){
+  const c1=p.c1,ol=shade(c1,-.42),c2=p.c2||shade(c1,.6);let s='';
+  if(p.horn)s+=`<path d="M10 39L-10 22L12 35Z" fill="#f5eed8" stroke="#c4b48a" stroke-width="1.2" stroke-linejoin="round"/><path d="M-4 27l2 4M1 30l2 4M6 33l2 3" stroke="#c4b48a" stroke-width="1"/>`;
+  const d='M8 46C8 22 36 14 60 26C70 31 78 36 86 34L98 22C101 30 99 37 92 41C99 45 101 52 98 60L86 48C76 54 64 64 42 64C20 64 8 60 8 46Z';
+  s+=`<path d="${d}" fill="${c1}" stroke="${ol}" stroke-width="1.8" stroke-linejoin="round"/>`;
+  s+=`<path d="M12 52C20 62 34 64 46 63C58 62 70 56 80 50C66 55 40 58 12 52Z" fill="${c2}" opacity=".9"/>`;
+  s+=`<path d="M22 57Q40 61 60 57M28 60Q42 63 54 60" stroke="${shade(c2,-.2)}" stroke-width="1" fill="none" opacity=".7"/>`;
+  s+=`<path d="${d}" fill="url(#sh)"/>`;
+  if(p.pat==='spots'){const R=rng(p.id);for(let i=0;i<9;i++)s+=`<circle cx="${F(24+R()*50)}" cy="${F(28+R()*16)}" r="${F(1.2+R()*1.6)}" fill="${p.pc}" opacity=".8"/>`;}
+  if(p.stars){[[34,30,3],[50,34,2.4],[62,31,2],[42,40,1.8],[70,38,1.6]].forEach(([x,y,r])=>s+=starShape(x,y,r*1.5,'#fff6b0'));}
+  s+=`<ellipse cx="34" cy="26" rx="14" ry="4" fill="#fff" opacity=".35"/>`;
+  s+=eye(24,43,3.8)+blush(26,50)+`<path d="M9 50Q17 54 25 51" stroke="${ol}" stroke-width="1.4" fill="none" stroke-linecap="round"/>`;
+  if(p.sparkle)s+=sparkles();
+  return s;
+}
+function artNessie(p){
+  const c1=p.c1,ol=shade(c1,-.42),c2=p.c2||shade(c1,.55),fin=p.fin||shade(c1,-.15);let s='';
+  s+=`<path d="M78 52Q96 56 106 72Q92 66 74 62Z" fill="${c1}" stroke="${ol}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  s+=`<ellipse cx="48" cy="68" rx="9" ry="4" transform="rotate(25 48 68)" fill="${shade(c1,-.1)}" stroke="${ol}" stroke-width="1.4"/><ellipse cx="78" cy="68" rx="8" ry="3.5" transform="rotate(25 78 68)" fill="${shade(c1,-.1)}" stroke="${ol}" stroke-width="1.4"/>`;
+  if(p.dragon){[[50,43],[60,41],[70,42],[80,47]].forEach(([x,y])=>s+=`<path d="M${x-4} ${y+2}L${x} ${y-7}L${x+4} ${y+2}Z" fill="${fin}" stroke="${shade(fin,-.35)}" stroke-width="1.1" stroke-linejoin="round"/>`);}
+  s+=`<ellipse cx="62" cy="56" rx="24" ry="14" fill="${c1}" stroke="${ol}" stroke-width="1.8"/>`;
+  const nk='M50 54C38 46 40 26 28 18';
+  s+=`<path d="${nk}" stroke="${ol}" stroke-width="13.5" fill="none" stroke-linecap="round"/><path d="${nk}" stroke="${c1}" stroke-width="10.5" fill="none" stroke-linecap="round"/>`;
+  s+=`<ellipse cx="62" cy="62" rx="18" ry="6" fill="${c2}" opacity=".85"/><ellipse cx="62" cy="56" rx="24" ry="14" fill="url(#sh)"/>`;
+  if(p.dragon)s+=`<path d="M24 11L20 1M30 11L30 1" stroke="${fin}" stroke-width="2.6" stroke-linecap="round"/>`;
+  s+=`<ellipse cx="22" cy="16" rx="11.5" ry="8" fill="${c1}" stroke="${ol}" stroke-width="1.7"/>`;
+  const R=rng(p.id);for(let i=0;i<6;i++)s+=`<circle cx="${F(48+R()*28)}" cy="${F(48+R()*8)}" r="${F(1.2+R()*1.6)}" fill="${p.pc||c2}" opacity=".85"/>`;
+  s+=`<ellipse cx="56" cy="47" rx="10" ry="3.2" fill="#fff" opacity=".35"/>`;
+  s+=eye(19,14,3.2)+blush(21,20)+`<circle cx="12.5" cy="15" r=".9" fill="${ol}"/>`;
+  if(p.sparkle)s+=sparkles();
+  return s;
+}
+const TRASH_ART={
+  schoen:`<path d="M30 14L52 14L54 50L80 55C89 57 89 68 80 68L30 68Z" fill="#8a5a3c" stroke="#5e3a24" stroke-width="2" stroke-linejoin="round"/><path d="M28 66L90 66L90 72L28 72Z" fill="#4a2e1c" rx="2"/><path d="M36 24h14M36 32h14M36 40h14" stroke="#efe0c0" stroke-width="2" stroke-linecap="round"/><ellipse cx="40" cy="56" rx="7" ry="3" fill="#fff" opacity=".2"/>`,
+  blik:`<rect x="34" y="16" width="32" height="56" rx="6" fill="#d9dfe4" stroke="#8a969f" stroke-width="2"/><rect x="34" y="30" width="32" height="24" fill="#e57373"/><path d="M40 36l20 12" stroke="#fff" stroke-width="3" opacity=".6"/><ellipse cx="50" cy="18" rx="16" ry="4" fill="#eef2f5" stroke="#8a969f" stroke-width="1.5"/><rect x="38" y="20" width="5" height="48" fill="#fff" opacity=".35"/>`,
+  wier:`<path d="M40 78C30 60 50 50 38 30S44 10 40 4" stroke="#6f9e48" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M54 78C64 62 46 50 58 32S54 16 60 8" stroke="#8db255" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M48 78C44 66 54 58 48 46" stroke="#a9c96a" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+  tak:`<path d="M10 60L92 30" stroke="#8a6a48" stroke-width="7" stroke-linecap="round"/><path d="M60 42L72 22M34 52L28 40" stroke="#8a6a48" stroke-width="4" stroke-linecap="round"/><ellipse cx="74" cy="19" rx="7" ry="3.5" transform="rotate(-30 74 19)" fill="#9cbf4f" stroke="#6f8f35" stroke-width="1.2"/><path d="M14 58L90 30" stroke="#b89670" stroke-width="2" opacity=".6"/>`
+};
+const ART={};
+function art(id){
+  if(ART[id])return ART[id];
+  const f=FISH[id],p=Object.assign({id},f.a||{});
+  const fn={fish:artFish,eel:artEel,crab:artCrab,lobster:artLobster,shrimp:artShrimp,octo:artOcto,squid:artSquid,jelly:artJelly,star:artStar,whale:artWhale,nessie:artNessie}[p.t];
+  const inner=f.trash?TRASH_ART[id]:fn(p);
+  return ART[id]=`<svg class="art" viewBox="-12 -6 124 92"><g filter="url(#paint)">${inner}</g></svg>`;
+}
+const pic=(id,cls)=>`<div class="pic ${cls||''}">${art(id)}</div>`;
+
+/* =========================================================
+   SPELDATA
+   ========================================================= */
+const RAR={c:{n:'Gewoon',col:'#b9ab92'},u:{n:'Ongewoon',col:'#8db255'},r:{n:'Zeldzaam',col:'#5fa8c4'},e:{n:'Episch',col:'#b38be0'},l:{n:'Legendarisch',col:'#f2b04b'},t:{n:'Rommel',col:'#c8b89a'}};
+const RORDER=['c','u','r','e','l'];
+const MAX_LVL=100;
+
+const LOCS=[
+ {id:'vijver',name:'Dorpsvijver',emoji:'🌳',lvl:1,boat:null,desc:'Een rustig vijvertje vol mos. Perfect om te beginnen.',
+  th:{bg:'#fbf5e1',fl:'#f6cdbd',earth:'#c9744f',moss:'#9cbf4f',w1:'#7cc6c0',w2:'#b2e0da',rock:'#d98b5f',p1:'#6fb6c9',p2:'#9fb54a'},
+  fish:[['voorn','Voorn','c',3,{t:'fish',shape:'slim',c1:'#b9c6d3',c2:'#f1f4f6',fin:'#ec8a6e'}],
+        ['baars','Baars','c',4,{t:'fish',c1:'#a9c46c',c2:'#f4efc6',fin:'#f08a4b',pat:'stripes',pc:'#6f8a3e',dorsal:'big'}],
+        ['karper','Karper','u',10,{t:'fish',shape:'tall',c1:'#d8a64f',c2:'#f7e6b8',pat:'scales',whiskers:1}],
+        ['snoek','Snoek','r',25,{t:'fish',shape:'long',c1:'#86a86c',c2:'#e9efc9',pat:'spots',pc:'#e3ecb4',tail:'round',teeth:1}],
+        ['goudvis','Goudvis','e',60,{t:'fish',c1:'#f2873f',c2:'#fff3e2',fin:'#f8cdb0',face:1,tail:'fan',dorsal:'big',pat:'spots',pc:'#f6b43a'}],
+        ['koikoning','Koi-koning','l',200,{t:'fish',c1:'#fff6ea',c2:'#ffffff',fin:'#fbd9c2',pat:'spots',pc:'#ef7a3a',sr:2.2,n:6,tail:'fan',dorsal:'big',crown:1,sparkle:1}]]},
+ {id:'rivier',name:'Kronkelrivier',emoji:'🌲',lvl:5,boat:null,desc:'Stromend water met snelle vissen.',
+  th:{bg:'#f3f6e4',fl:'#d9e8b8',earth:'#a9774f',moss:'#7fb35a',w1:'#6fb3d9',w2:'#a8d6ec',rock:'#b8a58c',p1:'#7fc28a',p2:'#6f9e48'},
+  fish:[['forel','Forel','c',8,{t:'fish',shape:'slim',c1:'#a8b98c',c2:'#f4d9cc',pat:'spots',pc:'#5f6e45'}],
+        ['brasem','Brasem','c',9,{t:'fish',shape:'tall',c1:'#cbbf98',c2:'#f3eedb',pat:'scales'}],
+        ['paling','Paling','u',24,{t:'eel',c1:'#7a8756',c2:'#ddd7a8'}],
+        ['zalm','Zalm','r',60,{t:'fish',shape:'long',c1:'#9db2c6',c2:'#f6c3a9',pat:'spots',pc:'#55657a'}],
+        ['goudzalm','Gouden zalm','e',150,{t:'fish',shape:'long',c1:'#f4c24a',c2:'#fff1c2',fin:'#f7d97a',pat:'scales',sparkle:1}],
+        ['riviermonster','Riviermonster','l',500,{t:'fish',shape:'long',c1:'#55704d',c2:'#bcc78f',pat:'spots',pc:'#3e5638',whiskers:1,teeth:1,tail:'round',dorsal:'big',sparkle:1}]]},
+ {id:'meer',name:'Bergmeer',emoji:'⛰️',lvl:12,boat:'roeiboot',desc:'Diep, helder en ijskoud. Je hebt een bootje nodig.',
+  th:{bg:'#eef1f8',fl:'#dfe4f5',earth:'#8a7d9a',moss:'#8fb07a',w1:'#5f9bd1',w2:'#a2c8ec',rock:'#a7a3b8',p1:'#8fb0d9',p2:'#6f9e7a'},
+  fish:[['zeelt','Zeelt','c',15,{t:'fish',c1:'#86a85e',c2:'#dde8ad',fin:'#6e8c48',tail:'round'}],
+        ['kwabaal','Kwabaal','c',18,{t:'fish',shape:'long',c1:'#8c7c5a',c2:'#e2d7b5',pat:'spots',pc:'#5e5238',whiskers:1,tail:'round'}],
+        ['grotforel','Grote forel','u',40,{t:'fish',shape:'slim',c1:'#8fb3a0',c2:'#f7d2c6',pat:'spots',pc:'#e0705a'}],
+        ['ridder','Bergridder','r',100,{t:'fish',shape:'slim',c1:'#6283ad',c2:'#f39a6a',pat:'spots',pc:'#dbe8f5'}],
+        ['kristalvis','Kristalvis','e',250,{t:'fish',c1:'#c4ebf7',c2:'#ffffff',fin:'#a6dbf0',face:1,tail:'fan',dorsal:'big',sparkle:1}],
+        ['nessie','Nessie','l',1000,{t:'nessie',c1:'#7fbb9c',c2:'#dcf0dd',pc:'#5f9a7c'}]]},
+ {id:'kust',name:'Zonnige kust',emoji:'🏝️',lvl:22,boat:'motorboot',desc:'Zout water, warm zand en grote zeevissen.',
+  th:{bg:'#fdf1df',fl:'#f8d6b0',earth:'#e2bd88',moss:'#f0d9a8',w1:'#49c0d4',w2:'#9fe3ec',rock:'#d9a57a',p1:'#f29b7a',p2:'#7fb87a'},
+  fish:[['haring','Haring','c',28,{t:'fish',shape:'slim',c1:'#86aacb',c2:'#f0f5f9'}],
+        ['makreel','Makreel','c',32,{t:'fish',shape:'slim',c1:'#4fa0a8',c2:'#eef6f2',pat:'stripes',pc:'#2f6e78'}],
+        ['krab','Krab','u',70,{t:'crab',c1:'#ec7a55'}],
+        ['kreeft','Blauwe kreeft','r',180,{t:'lobster',c1:'#4f7cbc'}],
+        ['zwaardvis','Zwaardvis','e',450,{t:'fish',shape:'slim',c1:'#5d82ab',c2:'#e8eff6',sword:1,dorsal:'tri'}],
+        ['witehaai','Witte haai','l',2000,{t:'fish',shape:'slim',c1:'#97aabb',c2:'#f6f8fa',dorsal:'tri',gills:1,teeth:1,sparkle:1}]]},
+ {id:'koraalrif',name:'Koraalrif',emoji:'🪸',lvl:33,boat:'zeiljacht',desc:'Een kleurrijk rif vol vrolijke tropische vissen.',
+  th:{bg:'#fdeef2',fl:'#f8cfdc',earth:'#f0b29c',moss:'#f7c9d4',w1:'#5ccfd6',w2:'#aaeef0',rock:'#ef8f8a',p1:'#f59ac0',p2:'#f7c26a'},
+  fish:[['clownvis','Clownvis','c',50,{t:'fish',c1:'#f28a3c',c2:'#fbb06a',fin:'#f5a05a',pat:'stripes',pc:'#ffffff',pco:'#4b3a2a',tail:'round'}],
+        ['doktersvis','Doktersvis','c',58,{t:'fish',c1:'#4f82d8',c2:'#86abee',fin:'#3b5fa8',tailc:'#f2d14a'}],
+        ['kwal','Roze kwal','u',130,{t:'jelly',c1:'#f4b8d8',c2:'#fde4f0'}],
+        ['papegaaivis','Papegaaivis','r',320,{t:'fish',c1:'#6fcdb6',c2:'#f7b3cf',fin:'#f6d66c',pat:'scales',tail:'round'}],
+        ['regenboogvis','Regenboogvis','e',800,{t:'fish',c1:'#b9a0f0',c2:'#ffe0f2',fin:'#8fe2d2',face:1,tail:'fan',dorsal:'big',sparkle:1}],
+        ['goudzeester','Gouden zeester','l',3500,{t:'star',c1:'#f5c34a',c2:'#fff0b8',sparkle:1}]]},
+ {id:'diepzee',name:'Diepzee',emoji:'🌊',lvl:45,boat:'trawler',desc:'Waar het licht ophoudt en de gloeiende monsters wonen.',
+  th:{bg:'#2b3560',fl:'#4a5a9a',earth:'#3b2f5a',moss:'#5a4f8a',w1:'#233a73',w2:'#3d5aa0',rock:'#4f4a7a',p1:'#7fd3e6',p2:'#8a6fd0'},
+  fish:[['lantaarnvis','Lantaarnvis','c',90,{t:'fish',shape:'slim',c1:'#47538a',c2:'#7d88bd',pat:'glow',pc:'#c6f6ff'}],
+        ['garnaal','Diepzeegarnaal','c',100,{t:'shrimp',c1:'#f39b8a'}],
+        ['pijlinktvis','Pijlinktvis','u',220,{t:'squid',c1:'#eaa3bb'}],
+        ['zeeduivel','Zeeduivel','r',550,{t:'fish',c1:'#5d4c70',c2:'#8d7ca0',lure:1,teeth:1,tail:'round'}],
+        ['reuzenoctopus','Reuzenoctopus','e',1400,{t:'octo',c1:'#dd6e6e'}],
+        ['kraken','Kraken','l',6000,{t:'octo',big:1,c1:'#6c4c9e',glow:1}]]},
+ {id:'ijszee',name:'IJszee',emoji:'🧊',lvl:60,boat:'ijsbreker',desc:'Het koudste water ter wereld. Alleen voor echte meesters.',
+  th:{bg:'#f2f8fc',fl:'#d6ebf7',earth:'#bcd9ea',moss:'#ffffff',w1:'#8cc9e6',w2:'#c9e8f6',rock:'#dfeef7',p1:'#a9d4ec',p2:'#9cc7e0'},
+  fish:[['ijsvis','IJsvis','c',160,{t:'fish',shape:'slim',c1:'#d6eef8',c2:'#ffffff',fin:'#b5dff0'}],
+        ['kabeljauw','Kabeljauw','c',180,{t:'fish',shape:'long',c1:'#b7a987',c2:'#f1ead5',pat:'spots',pc:'#8a7c5a',whiskers:1,tail:'round'}],
+        ['heilbot','Heilbot','u',400,{t:'fish',shape:'tall',c1:'#9d927c',c2:'#e9e2cf',pat:'spots',pc:'#7a6f5a',tail:'round'}],
+        ['groenhaai','Groenlandse haai','r',1000,{t:'fish',shape:'slim',c1:'#7f8f90',c2:'#dfe6e6',dorsal:'tri',gills:1}],
+        ['narwal','Narwal','e',2500,{t:'whale',c1:'#bcc9d2',c2:'#eef3f6',horn:1,pat:'spots',pc:'#8a9aa6'}],
+        ['mammoetwal','Mammoetwalvis','l',11000,{t:'whale',c1:'#5f80a6',c2:'#dbe7f2',sparkle:1}]]},
+ {id:'sterrenzee',name:'Sterrenzee',emoji:'🌌',lvl:80,boat:'sterrenschip',desc:'Een magische zee onder de sterren. Het einde van de reis... of niet?',
+  th:{bg:'#25224f',fl:'#f7e08a',earth:'#4a3a7a',moss:'#8a7ad0',w1:'#5a4ab0',w2:'#8f7fe0',rock:'#6a5aa8',p1:'#f5c2e0',p2:'#9fe0f0'},
+  fish:[['sterrenvisje','Sterrenvisje','c',300,{t:'fish',c1:'#a2abf2',c2:'#e8ebff',fin:'#c7b8f7',pat:'glow',pc:'#fff6b0',tail:'round'}],
+        ['maanvis','Maanvis','c',340,{t:'fish',shape:'tall',c1:'#ece6c6',c2:'#ffffff',fin:'#d8d0a8',pat:'spots',pc:'#d2c9a0'}],
+        ['nevelkwal','Nevelkwal','u',750,{t:'jelly',c1:'#b9a0f0',c2:'#f0e6ff',glow:1}],
+        ['kometenvis','Kometenvis','r',1800,{t:'fish',shape:'long',c1:'#80d4f0',c2:'#e6f8ff',fin:'#fff0a8',tail:'fan',sparkle:1}],
+        ['sterrenwalvis','Sterrenwalvis','e',4500,{t:'whale',c1:'#3f4f94',c2:'#8fa0e0',stars:1,sparkle:1}],
+        ['sterrendraak','Sterrendraak','l',20000,{t:'nessie',dragon:1,c1:'#f2b6d8',c2:'#fff0f8',fin:'#f6d36a',pc:'#fff6b0',sparkle:1}]]}
+];
+const TRASH=[['schoen','Oude schoen'],['blik','Leeg blikje'],['wier','Zeewier'],['tak','Natte tak']];
+
+const RODS=[
+ {name:'Bamboestok',price:0,min:1,max:1,luck:0,cd:3.0},
+ {name:'Glasvezel hengel',price:250,min:1,max:2,luck:.1,cd:2.8},
+ {name:'Carbon hengel',price:1500,min:1,max:3,luck:.2,cd:2.6},
+ {name:'Titanium hengel',price:8000,min:2,max:3,luck:.35,cd:2.4},
+ {name:'Koraalhengel',price:30000,min:2,max:4,luck:.5,cd:2.2},
+ {name:'Meesterhengel',price:90000,min:3,max:5,luck:.75,cd:2.0},
+ {name:'Krakenhengel',price:250000,min:3,max:6,luck:1.0,cd:1.8},
+ {name:'Poseidons hengel',price:700000,min:4,max:7,luck:1.4,cd:1.6},
+ {name:'Sterrenhengel',price:1500000,min:5,max:9,luck:2.0,cd:1.4}
+];
+const BOATS=[
+ {id:'roeiboot',name:'Roeiboot',em:'🛶',price:1000},
+ {id:'motorboot',name:'Motorboot',em:'🚤',price:8000},
+ {id:'zeiljacht',name:'Zeiljacht',em:'⛵',price:35000},
+ {id:'trawler',name:'Trawler',em:'🚢',price:120000},
+ {id:'ijsbreker',name:'IJsbreker',em:'⛴️',price:400000},
+ {id:'sterrenschip',name:'Sterrenschip',em:'🚀',price:1000000}
+];
+const BAITS=[
+ {id:'worm',name:'Wormen',em:'🪱',price:60,luck:.2},
+ {id:'glinster',name:'Glinsteraas',em:'✨',price:500,luck:.5},
+ {id:'magisch',name:'Magisch aas',em:'🔮',price:4000,luck:1.2}
+];
+const PACK=25;
+
+const FISH={};
+LOCS.forEach((L,i)=>{L.idx=i;L.fish=L.fish.map(([id,name,r,v,a])=>FISH[id]={id,name,r,v,a,xp:Math.round(v*.8)+1,loc:L.id});});
+const TRASH_F=TRASH.map(([id,name])=>FISH[id]={id,name,r:'t',v:1,xp:1,loc:null,trash:true});
+
+/* =========================================================
+   SCÈNE
+   ========================================================= */
+function leaf(x,y,a,s,c){const o=shade(c,-.3);return `<g transform="translate(${x} ${y}) rotate(${a})"><path d="M0 0C${s*.3} ${-s*.38} ${s*.8} ${-s*.32} ${s} 0C${s*.8} ${s*.32} ${s*.3} ${s*.38} 0 0Z" fill="${c}" stroke="${o}" stroke-width="1.5"/><path d="M2 0L${s*.85} 0" stroke="${o}" stroke-width="1" opacity=".5"/><path d="M${s*.2} ${-s*.12}Q${s*.5} ${-s*.25} ${s*.75} ${-s*.1}" stroke="#fff" stroke-width="1.5" fill="none" opacity=".35"/></g>`;}
+function flower(x,y,r,c){return `<g transform="translate(${x} ${y})">${[0,72,144,216,288].map(a=>`<ellipse cx="0" cy="${-r}" rx="${r*.6}" ry="${r}" transform="rotate(${a})" fill="${c}"/>`).join('')}</g>`;}
+function sceneSVG(L,still){
+  const T=L.th,dk=shade(T.earth,-.3);
+  const flowers=[[40,40,7],[150,22,5],[250,62,6],[350,34,8],[80,96,5],[226,100,4],[370,88,5]].map(([x,y,r])=>flower(x,y,r,T.fl)).join('');
+  const pads=[[102,64],[124,52],[136,74],[108,86],[130,96],[98,110],[122,118],[140,108]];
+  const bubble=`<path d="M118 150C116 120 121 92 119 58" stroke="${shade(T.p1,-.25)}" stroke-width="3" fill="none"/>`+pads.map(([x,y])=>`<path d="M119 ${y+8}L${x} ${y+3}" stroke="${shade(T.p1,-.25)}" stroke-width="2"/>`).join('')+pads.map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="10" ry="6" fill="${T.p1}" stroke="${shade(T.p1,-.3)}" stroke-width="1.4"/><ellipse cx="${x-2}" cy="${y-2}" rx="5" ry="2" fill="#fff" opacity=".35"/>`).join('');
+  const leafy=`<path d="M300 152C294 124 312 92 302 46" stroke="${shade(T.p2,-.3)}" stroke-width="3.5" fill="none"/>`+[[300,130,200,30],[302,114,-20,32],[306,96,190,28],[305,80,-30,30],[303,62,200,24],[302,48,-60,22]].map(([x,y,a,s])=>leaf(x,y,a,s,T.p2)).join('');
+  const back=`<g opacity=".3"><path d="M352 150C346 110 360 80 352 40" stroke="${T.p2}" stroke-width="3" fill="none"/>${leaf(352,110,-30,26,T.p2)}${leaf(354,80,200,24,T.p2)}<path d="M60 130C58 100 66 80 60 60" stroke="${T.p2}" stroke-width="3" fill="none"/>${leaf(60,96,200,22,T.p2)}${leaf(61,76,-30,20,T.p2)}</g>`;
+  return `<svg class="scenesvg" viewBox="0 0 400 230" preserveAspectRatio="xMidYMid slice">
+  <rect width="400" height="230" fill="${T.bg}"/>
+  <g opacity=".55">${flowers}</g>
+  <g filter="url(#paint)">
+    ${back}
+    <path d="M22 150L22 166C30 204 370 204 378 166L378 150Z" fill="${T.earth}" stroke="${dk}" stroke-width="2"/>
+    <path d="M26 172C70 194 330 194 374 172" stroke="${dk}" stroke-width="3" fill="none" opacity=".45"/>
+    <ellipse cx="200" cy="150" rx="180" ry="32" fill="${T.moss}" stroke="${shade(T.moss,-.25)}" stroke-width="2"/>
+    <ellipse cx="200" cy="150" rx="166" ry="25" fill="${T.w1}"/>
+    <ellipse cx="192" cy="146" rx="128" ry="14" fill="${T.w2}" opacity=".7"/>
+    <path d="M120 152q10-4 20 0M250 156q10-4 20 0M160 160q8-3 16 0" stroke="#fff" stroke-width="2" fill="none" opacity=".5" stroke-linecap="round"/>
+    <ellipse cx="62" cy="142" rx="30" ry="20" fill="${T.rock}" stroke="${shade(T.rock,-.3)}" stroke-width="2"/>
+    <path d="M35 136C44 120 80 120 89 136C76 130 50 130 35 136Z" fill="${T.moss}" stroke="${shade(T.moss,-.25)}" stroke-width="1.2"/>
+    <ellipse cx="52" cy="146" rx="10" ry="4" fill="#fff" opacity=".2"/>
+    <g class="${still?'':'sway'}">${bubble}</g>
+    <g class="${still?'':'sway sway2'}">${leafy}</g>
+  </g>
+  ${still?'':`<ellipse class="rip" cx="200" cy="148" rx="9" ry="2.5" fill="none" stroke="#fff" stroke-width="1.5"/><ellipse class="rip rip2" cx="200" cy="148" rx="9" ry="2.5" fill="none" stroke="#fff" stroke-width="1.5"/>
+  <path d="M392 6Q310 70 200 141" stroke="rgba(60,40,20,.45)" stroke-width="1" fill="none"/>
+  <path d="M430 90L392 6" stroke="#8a5a3c" stroke-width="5" stroke-linecap="round"/>
+  <g class="bob"><circle cx="200" cy="142" r="7" fill="#fff" stroke="#4b3a2a" stroke-width="1.5"/><path d="M193 142A7 7 0 0 1 207 142Z" fill="#ef7f45" stroke="#4b3a2a" stroke-width="1.5"/></g>`}
+  </svg>`;
+}
+
+/* =========================================================
+   STAAT
+   ========================================================= */
+const KEY='pocketvisser_v2';
+function fresh(){return {coins:0,lvl:1,xp:0,loc:'vijver',rod:0,boats:[],bait:{},activeBait:null,bucket:{},dex:{},stats:{casts:0,caught:0,earned:0,best:null},log:[]};}
+let S=fresh();
+try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);S=Object.assign(fresh(),d);S.stats=Object.assign(fresh().stats,d.stats||{});
+  for(const k of Object.keys(S.bucket))if(!FISH[k])delete S.bucket[k];S.log=S.log.filter(k=>FISH[k]);if(!LOCS.find(l=>l.id===S.loc))S.loc='vijver';}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+const $=s=>document.querySelector(s);
+const fmt=n=>Math.floor(n).toLocaleString('nl-NL');
+const rint=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const locById=id=>LOCS.find(l=>l.id===id);
+const xpNeed=l=>Math.floor(20*Math.pow(l,1.8));
+function vibrate(ms){try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}}
+function toast(msg,cls){const t=document.createElement('div');t.className='toast '+(cls||'');t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),2900);}
+const bucketCount=()=>Object.values(S.bucket).reduce((a,b)=>a+b,0);
+const bucketValue=()=>Object.entries(S.bucket).reduce((a,[id,n])=>a+FISH[id].v*n,0);
+const canGo=L=>S.lvl>=L.lvl&&(!L.boat||S.boats.includes(L.boat));
+function pickRarity(luck){
+  const w={c:60,u:25*(1+luck*.5),r:10*(1+luck),e:4*(1+luck*1.4),l:1*(1+luck*1.8)};
+  let tot=0;for(const k in w)tot+=w[k];let x=Math.random()*tot;
+  for(const k of RORDER){x-=w[k];if(x<=0)return k;}return 'c';
+}
+
+/* =========================================================
+   VISSEN
+   ========================================================= */
+let busy=false;
+$('#castBtn').addEventListener('click',cast);
+function cast(){
+  if(busy)return;busy=true;
+  const rod=RODS[S.rod],btn=$('#castBtn'),fill=$('#castFill');
+  btn.classList.add('cooling');
+  fill.style.transition='none';fill.style.width='0%';void fill.offsetWidth;
+  fill.style.transition=`width ${rod.cd}s linear`;fill.style.width='100%';
+  const sc=$('#scene');sc.classList.remove('bite');void sc.offsetWidth;sc.classList.add('bite');
+  vibrate(12);
+  setTimeout(()=>{sc.classList.remove('bite');doCatch();},650);
+  setTimeout(()=>{busy=false;btn.classList.remove('cooling');fill.style.transition='none';fill.style.width='0%';},rod.cd*1000);
+}
+function doCatch(){
+  const rod=RODS[S.rod],L=locById(S.loc);
+  let luck=rod.luck;
+  if(S.activeBait&&(S.bait[S.activeBait]||0)>0){
+    const b=BAITS.find(x=>x.id===S.activeBait);luck+=b.luck;S.bait[S.activeBait]--;
+    if(S.bait[S.activeBait]<=0){S.activeBait=null;toast(`${b.em} Je ${b.name.toLowerCase()} is op!`);}
+  }
+  S.stats.casts++;
+  const n=rint(rod.min,rod.max),caught=[];
+  for(let i=0;i<n;i++){
+    let f;
+    if(Math.random()<.12/(1+luck))f=pick(TRASH_F);
+    else{const r=pickRarity(luck);f=pick(L.fish.filter(x=>x.r===r));}
+    const isNew=!f.trash&&!S.dex[f.id];
+    S.dex[f.id]=(S.dex[f.id]||0)+1;S.bucket[f.id]=(S.bucket[f.id]||0)+1;S.stats.caught++;
+    if(!f.trash&&(!S.stats.best||f.v>FISH[S.stats.best].v))S.stats.best=f.id;
+    caught.push({f,isNew});
+  }
+  let chest=0;
+  if(Math.random()<.03){chest=Math.round(15*Math.pow(2,L.idx)*(1+S.lvl/10));S.coins+=chest;S.stats.earned+=chest;}
+  S.log=[...caught.map(c=>c.f.id),...S.log].slice(0,16);
+  showCatch(caught,chest);
+  addXp(caught.reduce((a,c)=>a+c.f.xp,0));
+  save();renderAll();
+}
+function showCatch(caught,chest){
+  caught.sort((a,b)=>b.f.v-a.f.v);const best=caught[0].f;
+  let h=caught.map(c=>`<div class="ci r-${c.f.r}" style="--rc:${RAR[c.f.r].col}">${pic(c.f.id)}<div class="ct"><b>${c.f.name}${c.isNew?'<span class="new">NIEUW</span>':''}</b><small>${RAR[c.f.r].n} · 💰${fmt(c.f.v)}</small></div><span class="xp">+${fmt(c.f.xp)} xp</span></div>`).join('');
+  if(chest)h+=`<div class="ci" style="--rc:#f2b04b"><div class="pic" style="font-size:34px;text-align:center;line-height:46px">🎁</div><div class="ct"><b>Schatkist!</b><small>Direct in je portemonnee</small></div><span class="xp" style="color:#c27c00">+💰${fmt(chest)}</span></div>`;
+  const card=$('#catchCard');card.innerHTML=h;card.classList.remove('pop');void card.offsetWidth;card.classList.add('pop');
+  const pf=$('#popFish');pf.innerHTML=art(best.id);pf.classList.remove('jump');void pf.offsetWidth;pf.classList.add('jump');
+  if(best.r==='l'){toast(`🌟 LEGENDARISCH! ${best.name}!`,'gold');shake();vibrate([40,40,80]);}
+  else if(best.r==='e'){toast(`💜 Episch! ${best.name}`);vibrate(30);}
+  else if(chest)toast(`🎁 Schatkist gevonden! +💰${fmt(chest)}`,'gold');
+}
+function shake(){const sc=$('#scene');sc.classList.remove('shake');void sc.offsetWidth;sc.classList.add('shake');}
+function addXp(x){
+  if(S.lvl>=MAX_LVL)return;
+  S.xp+=x;let up=false;
+  while(S.lvl<MAX_LVL&&S.xp>=xpNeed(S.lvl)){
+    S.xp-=xpNeed(S.lvl);S.lvl++;up=true;
+    toast(S.lvl>=MAX_LVL?'🏆 MAX LEVEL 100! Je bent een vislegende!':`⭐ Level ${S.lvl}!`,'gold');
+    LOCS.filter(l=>l.lvl===S.lvl).forEach(l=>toast(`${l.emoji} Nieuwe plek: ${l.name}${l.boat&&!S.boats.includes(l.boat)?' (boot nodig)':''}`));
+  }
+  if(S.lvl>=MAX_LVL)S.xp=0;
+  if(up){const b=$('#lvl');b.classList.remove('bump');void b.offsetWidth;b.classList.add('bump');vibrate([20,30,20]);}
+}
+
+/* =========================================================
+   ACTIES
+   ========================================================= */
+function sellAll(){const v=bucketValue();if(!v)return;S.coins+=v;S.stats.earned+=v;S.bucket={};save();toast(`💰 +${fmt(v)} munten`);renderAll();}
+function sellOne(id){const n=S.bucket[id];if(!n)return;const v=FISH[id].v*n;S.coins+=v;S.stats.earned+=v;delete S.bucket[id];save();toast(`💰 +${fmt(v)} munten`);renderAll();}
+function buyRod(i){const r=RODS[i];if(i<=S.rod||S.coins<r.price)return;S.coins-=r.price;S.rod=i;save();toast(`🎣 ${r.name} gekocht!`,'gold');renderAll();}
+function buyBoat(id){const b=BOATS.find(x=>x.id===id);if(S.boats.includes(id)||S.coins<b.price)return;S.coins-=b.price;S.boats.push(id);save();toast(`${b.em} ${b.name} gekocht!`,'gold');renderAll();}
+function buyBait(id){const b=BAITS.find(x=>x.id===id);if(S.coins<b.price)return;S.coins-=b.price;S.bait[id]=(S.bait[id]||0)+PACK;if(!S.activeBait)S.activeBait=id;save();toast(`${b.em} ${PACK}× ${b.name.toLowerCase()} gekocht`);renderAll();}
+function useBait(id){S.activeBait=S.activeBait===id?null:id;save();renderAll();}
+function travel(id){const L=locById(id);if(!canGo(L))return;S.loc=id;save();renderAll();show('vis');toast(`${L.emoji} Welkom bij ${L.name}!`);}
+let resetArmed=false;
+function resetGame(btn){
+  if(!resetArmed){resetArmed=true;btn.textContent='Zeker weten? Tik nog eens';setTimeout(()=>{resetArmed=false;renderDex();},3000);return;}
+  try{localStorage.removeItem(KEY);}catch(e){}
+  S=fresh();resetArmed=false;$('#catchCard').innerHTML='<div class="hint"><b style="font-size:20px;color:#ef7f45">Welkom bij Fish to Go! 🐟</b><br>Tik op <b>Vissen!</b> om je hengel uit te werpen 🎣</div>';
+  renderAll();show('vis');toast('🔄 Nieuw begin!');
+}
+
+/* =========================================================
+   WEERGAVE
+   ========================================================= */
+let sceneLoc=null;
+function renderHeader(){
+  const max=S.lvl>=MAX_LVL,need=xpNeed(S.lvl);
+  $('#lvlNum').textContent=S.lvl;
+  $('#xpText').textContent=max?'MAX LEVEL 🏆':`${fmt(S.xp)} / ${fmt(need)} xp`;
+  $('#xpFill').style.width=(max?100:Math.min(100,S.xp/need*100))+'%';
+  $('#coins').textContent=fmt(S.coins);
+  const L=locById(S.loc);$('#locShort').textContent=L.emoji+' '+L.name;
+  const c=bucketCount();$('#nbEmmer').textContent=c?(c>99?'99+':c):'';
+}
+function setScene(){
+  if(sceneLoc===S.loc)return;sceneLoc=S.loc;
+  const L=locById(S.loc);$('#sceneArt').innerHTML=sceneSVG(L);$('#locName').textContent=L.emoji+' '+L.name;
+}
+function renderFishView(){
+  $('#rodChip').textContent=`🎣 ${RODS[S.rod].name}`;
+  const b=S.activeBait&&BAITS.find(x=>x.id===S.activeBait);
+  $('#baitChip').textContent=b?`${b.em} ${b.name} (${S.bait[b.id]||0})`:'🪝 Geen aas';
+  const c=bucketCount(),v=bucketValue();
+  $('#bucketBar').innerHTML=`<div>🪣 <b>${c}</b> in je emmer<br><small style="color:var(--muted)">Waarde: 💰${fmt(v)}</small></div><button class="btn gold" onclick="sellAll()" ${v?'':'disabled'}>Verkoop alles</button>`;
+  $('#logCard').style.display=S.log.length?'block':'none';
+  $('#log').innerHTML=S.log.map(id=>pic(id)).join('');
+}
+function renderBucket(){
+  const ent=Object.entries(S.bucket).sort((a,b)=>FISH[b[0]].v*b[1]-FISH[a[0]].v*a[1]);
+  let h=`<h2>🪣 Je emmer</h2>`;
+  if(!ent.length)h+=`<div class="card empty"><span class="em">🪣</span>Je emmer is leeg.<br>Ga vissen!</div>`;
+  else{
+    h+=`<div class="card bbar"><div><b>${bucketCount()}</b> vangsten<br><small style="color:var(--muted)">Totaal: 💰${fmt(bucketValue())}</small></div><button class="btn gold" onclick="sellAll()">Verkoop alles</button></div><div class="card">`;
+    h+=ent.map(([id,n])=>{const f=FISH[id];return `<div class="row">${pic(id)}<div class="info"><b>${f.name}</b> ×${n}<small style="color:${shade(RAR[f.r].col,-.2)}">${RAR[f.r].n} · 💰${fmt(f.v)} per stuk</small></div><button class="btn ghost" onclick="sellOne('${id}')">💰${fmt(f.v*n)}</button></div>`;}).join('')+`</div>`;
+  }
+  $('#v-emmer').innerHTML=h;
+}
+function renderShop(){
+  let h=`<h2>🎣 Hengels</h2><div class="card">`;
+  h+=RODS.map((r,i)=>{
+    const act=i===S.rod?'<span class="tag on">In gebruik</span>':i<S.rod?'<span class="tag">Gekocht</span>':`<button class="btn" onclick="buyRod(${i})" ${S.coins<r.price?'disabled':''}>💰${fmt(r.price)}</button>`;
+    return `<div class="row"><span class="em">🎣</span><div class="info"><b>${r.name}</b><small>${r.min===r.max?r.min:r.min+'–'+r.max} vis per worp · geluk +${Math.round(r.luck*100)}% · ${r.cd.toFixed(1).replace('.',',')}s</small></div>${act}</div>`;
+  }).join('')+`</div>`;
+  h+=`<h2>⛵ Boten</h2><div class="card">`;
+  h+=BOATS.map(b=>{const L=LOCS.find(l=>l.boat===b.id);
+    const act=S.boats.includes(b.id)?'<span class="tag on">In bezit</span>':`<button class="btn" onclick="buyBoat('${b.id}')" ${S.coins<b.price?'disabled':''}>💰${fmt(b.price)}</button>`;
+    return `<div class="row"><span class="em">${b.em}</span><div class="info"><b>${b.name}</b><small>Nodig voor ${L.emoji} ${L.name} (level ${L.lvl})</small></div>${act}</div>`;}).join('')+`</div>`;
+  h+=`<h2>🪱 Aas</h2><div class="card">`;
+  h+=BAITS.map(b=>{const have=S.bait[b.id]||0,on=S.activeBait===b.id;
+    return `<div class="row"><span class="em">${b.em}</span><div class="info"><b>${b.name}</b><small>Geluk +${Math.round(b.luck*100)}% per worp · je hebt ${have}</small></div><div class="acts"><button class="btn" onclick="buyBait('${b.id}')" ${S.coins<b.price?'disabled':''}>${PACK}× 💰${fmt(b.price)}</button>${have?`<button class="btn ghost" onclick="useBait('${b.id}')">${on?'✓ Actief':'Gebruik'}</button>`:''}</div></div>`;}).join('')+`</div><p style="font-size:12px;color:var(--muted);padding:0 4px 8px">Geluk geeft meer kans op zeldzame vissen en minder rommel. Aas gaat 1 per worp op.</p>`;
+  $('#v-winkel').innerHTML=h;
+}
+const THUMBS={};
+function renderLocs(){
+  let h=`<h2>🗺️ Visplekken</h2>`;
+  h+=LOCS.map(L=>{
+    const here=S.loc===L.id,ok=canGo(L),found=L.fish.filter(f=>S.dex[f.id]).length,bt=L.boat&&BOATS.find(b=>b.id===L.boat);
+    let act;
+    if(here)act='<span class="tag on">📍 Je bent hier</span>';
+    else if(S.lvl<L.lvl)act=`<span class="tag">🔒 Level ${L.lvl}</span>`;
+    else if(L.boat&&!S.boats.includes(L.boat))act=`<button class="btn ghost" onclick="show('winkel')">🔒 ${bt.em} ${bt.name} nodig</button>`;
+    else act=`<button class="btn" onclick="travel('${L.id}')">Hierheen ➜</button>`;
+    const th=THUMBS[L.id]||(THUMBS[L.id]=sceneSVG(L,true).replace('class="scenesvg"','').replace('preserveAspectRatio="xMidYMid slice"',''));
+    return `<div class="loc ${ok?'':'locked'}"><div class="thumb">${th}</div><div class="body"><h3>${L.emoji} ${L.name}</h3><p>${L.desc}</p><div class="meta">Level ${L.lvl}+${bt?' · '+bt.em+' '+bt.name:''} · 📖 ${found}/${L.fish.length} ontdekt</div>${act}</div></div>`;
+  }).join('');
+  $('#v-plekken').innerHTML=h;
+}
+function renderDex(){
+  const total=LOCS.reduce((a,L)=>a+L.fish.length,0),found=LOCS.reduce((a,L)=>a+L.fish.filter(f=>S.dex[f.id]).length,0);
+  const best=S.stats.best&&FISH[S.stats.best];
+  let h=`<h2>📖 Visboek · ${found}/${total}</h2>`;
+  h+=LOCS.map(L=>`<div class="card"><b>${L.emoji} ${L.name}</b><div class="grid" style="margin-top:8px">${L.fish.map(f=>S.dex[f.id]?`<div class="cell" style="--rc:${RAR[f.r].col}">${pic(f.id)}<b>${f.name}</b><small>${RAR[f.r].n} · ×${S.dex[f.id]}</small></div>`:`<div class="cell unk">${pic(f.id,'sil')}<b>???</b><small>${RAR[f.r].n}</small></div>`).join('')}</div></div>`).join('');
+  h+=`<h2>📊 Statistieken</h2><div class="card"><div class="stats">
+    <div class="stat"><small>Worpen</small><b>${fmt(S.stats.casts)}</b></div>
+    <div class="stat"><small>Gevangen</small><b>${fmt(S.stats.caught)}</b></div>
+    <div class="stat"><small>Totaal verdiend</small><b>💰${fmt(S.stats.earned)}</b></div>
+    <div class="stat"><small>Beste vangst</small><b>${best?best.name:'–'}</b></div>
+  </div></div>
+  <div style="text-align:center;padding:6px 0 10px"><button class="btn danger" onclick="resetGame(this)">${resetArmed?'Zeker weten? Tik nog eens':'Opnieuw beginnen'}</button></div>`;
+  $('#v-visboek').innerHTML=h;
+}
+function renderAll(){renderHeader();setScene();renderFishView();renderBucket();renderShop();renderLocs();renderDex();}
+function show(v){
+  document.querySelectorAll('.view').forEach(e=>e.classList.toggle('active',e.id==='v-'+v));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.v)));
+renderAll();
+try{if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
+</script>
+</body>
+</html>
